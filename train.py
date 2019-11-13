@@ -109,7 +109,7 @@ def main(_):
       FLAGS.data_url, FLAGS.data_dir, FLAGS.silence_percentage,
       FLAGS.unknown_percentage,
       FLAGS.wanted_words.split(','), FLAGS.validation_percentage,
-      FLAGS.testing_percentage, model_settings)
+      FLAGS.testing_percentage, model_settings, FLAGS.excluded_words)
   fingerprint_size = model_settings['fingerprint_size']
   label_count = model_settings['label_count']
   time_shift_samples = int((FLAGS.time_shift_ms * FLAGS.sample_rate) / 1000)
@@ -420,6 +420,10 @@ if __name__ == '__main__':
       type=str,
       default='yes,no,up,down,left,right,on,off,stop,go',
       help='Words to use (others will be added to an unknown label)',)
+  parser.add_argument(
+      '--excluded_words',
+      type=str,
+      default='', )
   parser.add_argument(
       '--train_dir',
       type=str,

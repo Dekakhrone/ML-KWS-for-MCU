@@ -153,12 +153,12 @@ class AudioProcessor(object):
 
   def __init__(self, data_url, data_dir, silence_percentage, unknown_percentage,
                wanted_words, validation_percentage, testing_percentage,
-               model_settings):
+               model_settings, excluded_words):
     self.data_dir = data_dir
     self.maybe_download_and_extract_dataset(data_url, data_dir)
     self.prepare_data_index(silence_percentage, unknown_percentage,
                             wanted_words, validation_percentage,
-                            testing_percentage)
+                            testing_percentage, excluded_words)
     self.prepare_background_data()
     self.prepare_processing_graph(model_settings)
 
@@ -205,7 +205,7 @@ class AudioProcessor(object):
 
   def prepare_data_index(self, silence_percentage, unknown_percentage,
                          wanted_words, validation_percentage,
-                         testing_percentage):
+                         testing_percentage, excluded_words):
     """Prepares a list of the samples organized by set and label.
 
     The training loop needs a list of all the available data, organized by
@@ -244,7 +244,7 @@ class AudioProcessor(object):
       word = word.lower()
       # Treat the '_background_noise_' folder as a special case, since we expect
       # it to contain long audio samples we mix in to improve training.
-      if word == BACKGROUND_NOISE_DIR_NAME:
+      if word == BACKGROUND_NOISE_DIR_NAME or word in excluded_words:
         continue
       all_words[word] = True
       set_index = which_set(wav_path, validation_percentage, testing_percentage)
