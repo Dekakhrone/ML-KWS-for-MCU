@@ -165,7 +165,10 @@ class AudioProcessor(object):
 
 		self.augmenters = augmenters
 
-		self.prepare_processing_augmented_graph(model_settings)
+		if self.augmenters is not None:
+			self.prepare_processing_augmented_graph(model_settings)
+		else:
+			self.prepare_processing_graph(model_settings)
 
 
 	def maybe_download_and_extract_dataset(self, data_url, dest_directory):
@@ -407,37 +410,39 @@ class AudioProcessor(object):
 
 		# Allow the audio sample's volume to be adjusted.
 		self.foreground_volume_placeholder_ = tf.placeholder(tf.float32, [])
-		scaled_foreground = tf.multiply(wav_decoder.audio,
+		intermediate_audio = tf.multiply(wav_decoder.audio,
 		                                self.foreground_volume_placeholder_)
 
-		squeezed_audio = tf.squeeze(scaled_foreground)
+		if "audio" in self.augmenters:
+			squeezed_audio = tf.squeeze(intermediate_audio)
 
-		augmented_audio = tf.py_func(
-			self.augmenters["audio"].apply,
-			[squeezed_audio],
-			tf.float32
-		)
+			augmented_audio = tf.py_func(
+				self.augmenters["audio"].apply,
+				[squeezed_audio],
+				tf.float32
+			)
 
-		extended_audio = tf.expand_dims(augmented_audio, axis=1)
+			intermediate_audio = tf.expand_dims(augmented_audio, axis=1)
 
 		spectrogram = contrib_audio.audio_spectrogram(
-			extended_audio,
+			intermediate_audio,
 			window_size=model_settings['window_size_samples'],
 			stride=model_settings['window_stride_samples'],
 			magnitude_squared=True)
 
-		squeezed_spect = tf.squeeze(spectrogram)
+		if "spect" in self.augmenters:
+			squeezed_spect = tf.squeeze(spectrogram)
 
-		augmented_spect = tf.py_func(
-			self.augmenters["spect"].apply,
-			[squeezed_spect],
-			tf.float32
-		)
+			augmented_spect = tf.py_func(
+				self.augmenters["spect"].apply,
+				[squeezed_spect],
+				tf.float32
+			)
 
-		extended_spect = tf.expand_dims(augmented_spect, axis=0)
+			spectrogram = tf.expand_dims(augmented_spect, axis=0)
 
 		self.mfcc_ = contrib_audio.mfcc(
-			extended_spect,
+			spectrogram,
 			wav_decoder.sample_rate,
 			dct_coefficient_count=model_settings['dct_coefficient_count'])
 

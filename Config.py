@@ -7,6 +7,7 @@ class FLAGS:
 	silence_percentage = 10.0
 	unknown_percentage = 10.0
 	time_shift_ms = 0
+	use_custom_augs = False
 
 	testing_percentage = 10
 	validation_percentage = 10

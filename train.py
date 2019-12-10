@@ -163,10 +163,12 @@ def train(FLAGS):
 	# Start a new TensorFlow session.
 	sess = tf.InteractiveSession()
 
-	augmenters = {
-		"audio": makeAudioSequence(),
-		"spect": makeSpectSequence()
-	}
+	if FLAGS.use_custom_augs:
+		augmenters = {
+			"spect": makeSpectSequence()
+		}
+	else:
+		augmenters = None
 
 	# Begin by making sure we have the training data we need. If you already have
 	# training data of your own, use `--data_url= ` on the command line to avoid
@@ -229,6 +231,13 @@ def train(FLAGS):
 		cross_entropy_mean = tf.reduce_mean(
 			tf.nn.softmax_cross_entropy_with_logits(
 				labels=ground_truth_input, logits=logits))
+
+		# cross_entropy_mean = tf.reduce_mean(
+		# 	tf.nn.sigmoid_cross_entropy_with_logits(
+		# 		labels=ground_truth_input, logits=logits
+		# 	)
+		# )
+
 	tf.summary.scalar('cross_entropy', cross_entropy_mean)
 
 	update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
@@ -440,6 +449,10 @@ def console_launch():
 	      Range to randomly shift the training audio by in time.
 	      """)
 	parser.add_argument(
+		'--use_custom_augs',
+		action="store_true",
+		help="Whether to use third-party augmentations or not.")
+	parser.add_argument(
 		'--testing_percentage',
 		type=int,
 		default=10,
@@ -509,7 +522,7 @@ def console_launch():
 	parser.add_argument(
 		'--excluded_words',
 		type=str,
-		default='', )
+		default='Words listed here will not be used in during training (even as unknown)', )
 	parser.add_argument(
 		'--train_dir',
 		type=str,
@@ -562,6 +575,7 @@ def explicit_launch():
 		6,
 		276, 10, 4, 2, 1,
 		276, 3, 3, 2, 2,
+		276, 3, 3, 1, 1,
 		276, 3, 3, 1, 1,
 		276, 3, 3, 1, 1,
 		276, 3, 3, 1, 1,
