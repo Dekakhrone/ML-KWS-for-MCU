@@ -505,40 +505,47 @@ class AudioProcessor(object):
 			else:
 				sample_index = np.random.randint(len(candidates))
 			sample = candidates[sample_index]
-			# If we're time shifting, set up the offset for this sample.
-			if time_shift > 0:
-				time_shift_amount = np.random.randint(-time_shift, time_shift)
-			else:
-				time_shift_amount = 0
-			if time_shift_amount > 0:
-				time_shift_padding = [[time_shift_amount, 0], [0, 0]]
-				time_shift_offset = [0, 0]
-			else:
-				time_shift_padding = [[0, -time_shift_amount], [0, 0]]
-				time_shift_offset = [-time_shift_amount, 0]
 			input_dict = {
-				self.wav_filename_placeholder_: sample['file'],
-				# self.time_shift_padding_placeholder_: time_shift_padding,
-				# self.time_shift_offset_placeholder_: time_shift_offset,
+				self.wav_filename_placeholder_: sample['file']
 			}
-			# Choose a section of background noise to mix in.
-			if use_background:
-				background_index = np.random.randint(len(self.background_data))
-				background_samples = self.background_data[background_index]
-				background_offset = np.random.randint(
-					0, len(background_samples) - model_settings['desired_samples'])
-				background_clipped = background_samples[background_offset:(
-						background_offset + desired_samples)]
-				background_reshaped = background_clipped.reshape([desired_samples, 1])
-				if np.random.uniform(0, 1) < background_frequency:
-					background_volume = np.random.uniform(0, background_volume_range)
+			# If we're time shifting, set up the offset for this sample.
+			if self.augmenters is None:
+				if time_shift > 0:
+					time_shift_amount = np.random.randint(-time_shift, time_shift)
 				else:
+					time_shift_amount = 0
+				if time_shift_amount > 0:
+					time_shift_padding = [[time_shift_amount, 0], [0, 0]]
+					time_shift_offset = [0, 0]
+				else:
+					time_shift_padding = [[0, -time_shift_amount], [0, 0]]
+					time_shift_offset = [-time_shift_amount, 0]
+				input_dict.update({
+					self.time_shift_padding_placeholder_: time_shift_padding,
+					self.time_shift_offset_placeholder_: time_shift_offset,
+				})
+				# Choose a section of background noise to mix in.
+				if use_background:
+					background_index = np.random.randint(len(self.background_data))
+					background_samples = self.background_data[background_index]
+					background_offset = np.random.randint(
+						0, len(background_samples) - model_settings['desired_samples'])
+					background_clipped = background_samples[background_offset:(
+							background_offset + desired_samples)]
+					background_reshaped = background_clipped.reshape([desired_samples, 1])
+					if np.random.uniform(0, 1) < background_frequency:
+						background_volume = np.random.uniform(0, background_volume_range)
+					else:
+						background_volume = 0
+				else:
+					background_reshaped = np.zeros([desired_samples, 1])
 					background_volume = 0
-			else:
-				background_reshaped = np.zeros([desired_samples, 1])
-				background_volume = 0
-			# input_dict[self.background_data_placeholder_] = background_reshaped
-			# input_dict[self.background_volume_placeholder_] = background_volume
+
+				input_dict.update({
+					self.background_data_placeholder_: background_reshaped,
+					self.background_volume_placeholder_: background_volume
+				})
+
 			# If we want silence, mute out the main sample but leave the background.
 			if sample['label'] == SILENCE_LABEL:
 				input_dict[self.foreground_volume_placeholder_] = 0

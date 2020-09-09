@@ -130,8 +130,7 @@ def makeAudioSequence():
 
 
 def makeSpectSequence():
-	from AudioAugmentation.Augmentations import MaskValues
-	from AudioAugmentation.Core import AugTypes
+	from AudioAugmentation.Core import AugTypes, MaskValues
 
 	seq = Sequential(
 		augmenters=(
